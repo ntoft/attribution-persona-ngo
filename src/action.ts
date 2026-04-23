@@ -284,7 +284,6 @@ async function main() {
     orgName, repoName,
     `${PERSONA} attribution for ${eventWref}`,
     ops as Operation[],
-    { committer: `persona-${PERSONA}` },
   );
 
   console.log(JSON.stringify({
