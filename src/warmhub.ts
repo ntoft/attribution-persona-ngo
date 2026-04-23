@@ -1,6 +1,8 @@
 import { WarmHubClient } from "@warmhub/sdk-ts";
 
 export function clientFromEnv(): WarmHubClient {
+  // DEBUG: dump env key names so we can see what sprite runtime injects
+  console.error("[DEBUG env keys]", Object.keys(process.env).sort().join(","));
   const apiUrl = process.env.WARMHUB_API_URL;
   const token = process.env.WARMHUB_TOKEN;
   if (!apiUrl) throw new Error("WARMHUB_API_URL not set (sprite runtime should inject)");

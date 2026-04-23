@@ -3501,6 +3501,7 @@ function inferKind(name, operation) {
 }
 // src/warmhub.ts
 function clientFromEnv() {
+  console.error("[DEBUG env keys]", Object.keys(process.env).sort().join(","));
   const apiUrl = process.env.WARMHUB_API_URL;
   const token = process.env.WARMHUB_TOKEN;
   if (!apiUrl)
