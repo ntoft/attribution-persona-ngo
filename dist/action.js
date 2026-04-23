@@ -3542,7 +3542,9 @@ async function loadCredentialsFromPayload(payload) {
 var PERSONA = "ngo";
 var PROMPT_VERSION = "v1-2026-04-23-ngo";
 var PERSONA_PRIORS = `Your priors favor causes linked to industrial pollution, agricultural runoff, stormwater discharge, and regulatory failures. You weigh evidence of EPA TRI releases, nutrient loading (nitrate/phosphorus), and recent pollution events heavily. You are skeptical of "natural causes" explanations when upstream industrial activity or agricultural runoff is present in the evidence window, though you acknowledge natural causes when evidence overwhelmingly supports them.`;
-var MODEL = process.env.PERSONA_MODEL ?? "anthropic/claude-3.5-sonnet";
+function resolveModel() {
+  return process.env.PERSONA_MODEL ?? "anthropic/claude-3-haiku";
+}
 var OPENROUTER_BASE = process.env.OPENROUTER_BASE ?? "https://openrouter.ai/api/v1";
 var CONTEXT_LIMIT = 40;
 var RADIUS_DEG = 0.75;
@@ -3678,7 +3680,7 @@ async function askLlm(event, context) {
       "X-Title": "fish-kill-attribution-ngo"
     },
     body: JSON.stringify({
-      model: MODEL,
+      model: resolveModel(),
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
@@ -3749,7 +3751,7 @@ async function main() {
       cause: b.cause,
       share: b.share,
       persona: PERSONA,
-      model: MODEL,
+      model: resolveModel(),
       prompt_version: PROMPT_VERSION,
       rationale: b.rationale,
       sl_belief: b.sl_belief,
@@ -3764,7 +3766,7 @@ async function main() {
   console.log(JSON.stringify({
     eventWref,
     persona: PERSONA,
-    model: MODEL,
+    model: resolveModel(),
     commitId: result.commitId,
     beliefsEmitted: beliefs.length,
     causes: beliefs.map((b) => b.cause),

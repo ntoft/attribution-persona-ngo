@@ -13,7 +13,10 @@ const PROMPT_VERSION = "v1-2026-04-23-ngo";
 const PERSONA_PRIORS = `Your priors favor causes linked to industrial pollution, agricultural runoff, stormwater discharge, and regulatory failures. You weigh evidence of EPA TRI releases, nutrient loading (nitrate/phosphorus), and recent pollution events heavily. You are skeptical of "natural causes" explanations when upstream industrial activity or agricultural runoff is present in the evidence window, though you acknowledge natural causes when evidence overwhelmingly supports them.`;
 // ───────────────────────────────────────────────────────────────────────────
 
-const MODEL = process.env.PERSONA_MODEL ?? "anthropic/claude-3.5-sonnet";
+// MODEL resolved lazily inside askLlm — PERSONA_MODEL arrives via loadCredentialsFromPayload after this module loads.
+function resolveModel(): string {
+  return process.env.PERSONA_MODEL ?? "anthropic/claude-3-haiku";
+}
 const OPENROUTER_BASE = process.env.OPENROUTER_BASE ?? "https://openrouter.ai/api/v1";
 const CONTEXT_LIMIT = 40;
 const RADIUS_DEG = 0.75;   // ~80 km around the event
@@ -194,7 +197,7 @@ async function askLlm(event: EventData, context: ContextItem[]): Promise<LlmResp
       "X-Title": "fish-kill-attribution-ngo",
     },
     body: JSON.stringify({
-      model: MODEL,
+      model: resolveModel(),
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
@@ -277,7 +280,7 @@ async function main() {
       cause: b.cause,
       share: b.share,
       persona: PERSONA,
-      model: MODEL,
+      model: resolveModel(),
       prompt_version: PROMPT_VERSION,
       rationale: b.rationale,
       sl_belief: b.sl_belief,
@@ -298,7 +301,7 @@ async function main() {
   console.log(JSON.stringify({
     eventWref,
     persona: PERSONA,
-    model: MODEL,
+    model: resolveModel(),
     commitId: result.commitId,
     beliefsEmitted: beliefs.length,
     causes: beliefs.map((b) => b.cause),
