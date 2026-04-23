@@ -5,7 +5,7 @@
 // and commits one AttributionBelief assertion per causal factor.
 
 import type { AddOperation, Operation, FilterResult, ThingGet } from "@warmhub/sdk-ts";
-import { clientFromEnv, homeRepo, splitRepo } from "./warmhub";
+import { clientFromEnv, homeRepo, splitRepo, loadCredentialsFromPayload } from "./warmhub";
 
 // ── PERSONA CONFIG (varies per sprite) ─────────────────────────────────────
 const PERSONA = "ngo" as "ngo" | "industry" | "agency";
@@ -240,6 +240,7 @@ async function main() {
 
   const raw = await Bun.stdin.text();
   const payload: any = raw ? JSON.parse(raw) : {};
+  await loadCredentialsFromPayload(payload);
   const eventWref = extractEventWref(payload);
   if (!eventWref) {
     console.log(JSON.stringify({ skipped: true, reason: "no FishKillEvent in payload" }));

@@ -3518,6 +3518,25 @@ function splitRepo(repo) {
   }
   return { orgName, repoName };
 }
+async function loadCredentialsFromPayload(payload) {
+  const token = payload?.secretToken ?? payload?.payload?.secretToken;
+  if (!token)
+    return;
+  const apiUrl = process.env.WARMHUB_API_URL ?? "https://api.warmhub.ai";
+  const resp = await fetch(`${apiUrl}/api/credentials/export`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token })
+  });
+  if (!resp.ok) {
+    throw new Error(`credentials/export ${resp.status}: ${await resp.text()}`);
+  }
+  const { secrets } = await resp.json();
+  for (const [k, v] of Object.entries(secrets ?? {})) {
+    if (process.env[k] === undefined)
+      process.env[k] = v;
+  }
+}
 
 // src/action.ts
 var PERSONA = "ngo";
@@ -3701,6 +3720,7 @@ async function main() {
   const { orgName, repoName } = splitRepo(homeRepo());
   const raw = await Bun.stdin.text();
   const payload = raw ? JSON.parse(raw) : {};
+  await loadCredentialsFromPayload(payload);
   const eventWref = extractEventWref(payload);
   if (!eventWref) {
     console.log(JSON.stringify({ skipped: true, reason: "no FishKillEvent in payload" }));
