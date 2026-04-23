@@ -220,7 +220,9 @@ async function askLlm(event: EventData, context: ContextItem[]): Promise<LlmResp
 function extractEventWref(payload: SpritePayload): string | null {
   const ops = payload.matchedOperations ?? [];
   for (const op of ops) {
-    if (op?.name && op.name.startsWith("FishKillEvent/")) return op.name;
+    // Sprite runtime nests the commit op under .operation; support both shapes.
+    const nm = (op as any)?.operation?.name ?? (op as any)?.name;
+    if (typeof nm === "string" && nm.startsWith("FishKillEvent/")) return nm;
   }
   return null;
 }

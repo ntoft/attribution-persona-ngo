@@ -3685,8 +3685,9 @@ async function askLlm(event, context) {
 function extractEventWref(payload) {
   const ops = payload.matchedOperations ?? [];
   for (const op of ops) {
-    if (op?.name && op.name.startsWith("FishKillEvent/"))
-      return op.name;
+    const nm = op?.operation?.name ?? op?.name;
+    if (typeof nm === "string" && nm.startsWith("FishKillEvent/"))
+      return nm;
   }
   return null;
 }
