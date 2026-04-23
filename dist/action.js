@@ -3683,9 +3683,11 @@ async function askLlm(event, context) {
   }
 }
 function extractEventWref(payload) {
-  const ops = payload.matchedOperations ?? [];
-  for (const op of ops) {
-    const nm = op?.operation?.name ?? op?.name;
+  const inner = payload?.payload ?? payload;
+  const ops = inner?.matchedOperations ?? [];
+  for (const rawOp of ops) {
+    const op = rawOp?.operation ?? rawOp;
+    const nm = op?.name;
     if (typeof nm === "string" && nm.startsWith("FishKillEvent/"))
       return nm;
   }
@@ -3698,13 +3700,10 @@ async function main() {
   const client = clientFromEnv();
   const { orgName, repoName } = splitRepo(homeRepo());
   const raw = await Bun.stdin.text();
-  console.error("[DEBUG stdin len]", raw.length);
-  console.error("[DEBUG stdin head]", raw.slice(0, 2000));
   const payload = raw ? JSON.parse(raw) : {};
-  console.error("[DEBUG payload keys]", Object.keys(payload).join(","));
   const eventWref = extractEventWref(payload);
   if (!eventWref) {
-    console.log(JSON.stringify({ skipped: true, reason: "no FishKillEvent in payload", payloadTopLevel: Object.keys(payload), firstOp: payload?.matchedOperations?.[0] ?? null }));
+    console.log(JSON.stringify({ skipped: true, reason: "no FishKillEvent in payload" }));
     return;
   }
   const eventThing = await client.thing.get(orgName, repoName, eventWref);

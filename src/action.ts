@@ -217,11 +217,14 @@ async function askLlm(event: EventData, context: ContextItem[]): Promise<LlmResp
   }
 }
 
-function extractEventWref(payload: SpritePayload): string | null {
-  const ops = payload.matchedOperations ?? [];
-  for (const op of ops) {
-    // Sprite runtime nests the commit op under .operation; support both shapes.
-    const nm = (op as any)?.operation?.name ?? (op as any)?.name;
+function extractEventWref(payload: any): string | null {
+  // Sprite runtime envelope: { payload: { matchedOperations: [{ operation: { name } }] }, warmhubToken, secretToken }.
+  // Fall back to legacy flat shapes for local-dev testing.
+  const inner = payload?.payload ?? payload;
+  const ops = inner?.matchedOperations ?? [];
+  for (const rawOp of ops) {
+    const op = (rawOp as any)?.operation ?? rawOp;
+    const nm = op?.name;
     if (typeof nm === "string" && nm.startsWith("FishKillEvent/")) return nm;
   }
   return null;
@@ -236,14 +239,10 @@ async function main() {
   const { orgName, repoName } = splitRepo(homeRepo()); // chesapeake-attribution
 
   const raw = await Bun.stdin.text();
-  // DEBUG: dump raw stdin payload to stderr so sub log captures it
-  console.error("[DEBUG stdin len]", raw.length);
-  console.error("[DEBUG stdin head]", raw.slice(0, 2000));
-  const payload: SpritePayload = raw ? JSON.parse(raw) : {};
-  console.error("[DEBUG payload keys]", Object.keys(payload as any).join(","));
+  const payload: any = raw ? JSON.parse(raw) : {};
   const eventWref = extractEventWref(payload);
   if (!eventWref) {
-    console.log(JSON.stringify({ skipped: true, reason: "no FishKillEvent in payload", payloadTopLevel: Object.keys(payload as any), firstOp: (payload as any)?.matchedOperations?.[0] ?? null }));
+    console.log(JSON.stringify({ skipped: true, reason: "no FishKillEvent in payload" }));
     return;
   }
 
