@@ -4,7 +4,6 @@
 // produce per-cause attribution beliefs with Subjective Logic (SL) opinions,
 // and commits one AttributionBelief assertion per causal factor.
 
-import OpenAI from "openai";
 import type { AddOperation, Operation, FilterResult, ThingGet } from "@warmhub/sdk-ts";
 import { clientFromEnv, homeRepo, splitRepo } from "./warmhub";
 
@@ -181,30 +180,34 @@ async function askLlm(event: EventData, context: ContextItem[]): Promise<LlmResp
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error("OPENROUTER_API_KEY not set (credential binding?)");
 
-  const openai = new OpenAI({
-    apiKey,
-    baseURL: OPENROUTER_BASE,
-    defaultHeaders: {
-      "HTTP-Referer": "https://github.com/ntoft/attribution-persona-ngo",
-      "X-Title": "fish-kill-attribution-ngo",
-    },
-  });
-
   const userMessage = JSON.stringify({
     event,
     context: context.map((c) => ({ wref: c.wref, data: c.summary })),
   }, null, 2);
 
-  const res = await openai.chat.completions.create({
-    model: MODEL,
-    response_format: { type: "json_object" },
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user",   content: userMessage },
-    ],
+  const resp = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": "https://github.com/ntoft/attribution-persona-ngo",
+      "X-Title": "fish-kill-attribution-ngo",
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user",   content: userMessage },
+      ],
+    }),
   });
+  if (!resp.ok) {
+    throw new Error(`OpenRouter ${resp.status}: ${await resp.text()}`);
+  }
+  const res = (await resp.json()) as { choices?: Array<{ message?: { content?: string } }> };
 
-  const raw = res.choices[0]?.message?.content ?? "{}";
+  const raw = res.choices?.[0]?.message?.content ?? "{}";
   try {
     const parsed = JSON.parse(raw) as LlmResponse;
     if (!Array.isArray(parsed.beliefs)) throw new Error("no beliefs[] in response");
