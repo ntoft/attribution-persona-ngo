@@ -3698,10 +3698,13 @@ async function main() {
   const client = clientFromEnv();
   const { orgName, repoName } = splitRepo(homeRepo());
   const raw = await Bun.stdin.text();
+  console.error("[DEBUG stdin len]", raw.length);
+  console.error("[DEBUG stdin head]", raw.slice(0, 2000));
   const payload = raw ? JSON.parse(raw) : {};
+  console.error("[DEBUG payload keys]", Object.keys(payload).join(","));
   const eventWref = extractEventWref(payload);
   if (!eventWref) {
-    console.log(JSON.stringify({ skipped: true, reason: "no FishKillEvent in payload" }));
+    console.log(JSON.stringify({ skipped: true, reason: "no FishKillEvent in payload", payloadTopLevel: Object.keys(payload), firstOp: payload?.matchedOperations?.[0] ?? null }));
     return;
   }
   const eventThing = await client.thing.get(orgName, repoName, eventWref);

@@ -236,10 +236,14 @@ async function main() {
   const { orgName, repoName } = splitRepo(homeRepo()); // chesapeake-attribution
 
   const raw = await Bun.stdin.text();
+  // DEBUG: dump raw stdin payload to stderr so sub log captures it
+  console.error("[DEBUG stdin len]", raw.length);
+  console.error("[DEBUG stdin head]", raw.slice(0, 2000));
   const payload: SpritePayload = raw ? JSON.parse(raw) : {};
+  console.error("[DEBUG payload keys]", Object.keys(payload as any).join(","));
   const eventWref = extractEventWref(payload);
   if (!eventWref) {
-    console.log(JSON.stringify({ skipped: true, reason: "no FishKillEvent in payload" }));
+    console.log(JSON.stringify({ skipped: true, reason: "no FishKillEvent in payload", payloadTopLevel: Object.keys(payload as any), firstOp: (payload as any)?.matchedOperations?.[0] ?? null }));
     return;
   }
 
